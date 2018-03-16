@@ -1,13 +1,19 @@
-import numpy as np
 import pandas as pd
 import xarray as xr
+from six import string_types
+from collections import namedtuple
 
-from sklearn.base import BaseEstimator,TransformerMixin
+from sklearn.base import BaseEstimator, TransformerMixin
+from scipy.interpolate import InterpolatedUnivariateSpline
 
-from .utils import create_interpolator, events_to_xr_dim
+from .utils import events_to_xr_dim
 from .spike import Binner, DEFAULT_TAU
+from .interpolator import kriging_interpolator_factory, \
+    sinc_interpolator_factory
 
-class PeriEventTraceSampler(BaseEstimator,TransformerMixin):
+
+class PeriEventTraceSampler(BaseEstimator, TransformerMixin):
+
     """Take event-aligned samples of traces from a population of neurons.
 
     Traces are sampled relative to the event time. There is no enforced
@@ -17,24 +23,55 @@ class PeriEventTraceSampler(BaseEstimator,TransformerMixin):
 
     Parameters
     ----------
-    traces : pandas DataFrame with 'time' as the index and neuron IDs in columns
-        The traces that will be sampled from when the transform method is called
+    traces : pandas DataFrame with 'time' as the index and neuron IDs in
+    columns
+        The traces that will be sampled from when the transform method is
+        called
     sample_times : array
         Time relative to events that will be used to sample or bin spikes.
+    interpolator : string or callable, default: `cubic_spline`
+        interpolator factory or string correponding to a builtin interpolator;
+        builtin interpolators are: "cubic_spline", "kriging", "sinc"
 
     Notes
     -----
-
-    This estimator is stateless (besides constructor parameters), the
+    - This estimator is stateless (besides constructor parameters), the
     fit method does nothing but is useful when used in a pipeline.
     """
-    def __init__(self, traces, sample_times):
+
+    Interpolators = namedtuple(
+        "BuiltinInterpolators",
+        ["cubic_spline", "kriging", "sinc", ]
+    )(
+        InterpolatedUnivariateSpline,
+        kriging_interpolator_factory,
+        sinc_interpolator_factory,
+    )  # TODO figure out a better name...
+
+    def __init__(
+            self,
+            traces,
+            sample_times,
+            interpolator=Interpolators.cubic_spline,
+    ):
         self.sample_times = sample_times
         self.traces = traces
 
+        if isinstance(interpolator, string_types):
+            try:
+                self.interpolator = getattr(
+                    PeriEventSpikeSampler.Interpolators
+                )
+            except AttributeError:
+                raise ValueError(
+                    "unknown builtin interpolator: " + interpolator
+                )
+        else:
+            self.interpolator = interpolator
+
     def _make_splined_traces(self):
         self.splined_traces_ = self.traces.apply(
-            lambda y: create_interpolator(self.traces.index,y),
+            lambda y: self.interpolator(self.traces.index, y),
             axis=0,
         )
 
@@ -72,16 +109,19 @@ class PeriEventTraceSampler(BaseEstimator,TransformerMixin):
         def extractor(ev):
             t = self.sample_times + ev['time']
             interpolated = self.splined_traces_.apply(
-                lambda s: pd.Series(s(t),index=self.sample_times)
-                )
-            return xr.DataArray(interpolated.T,dims=['sample_times','neuron'])
+                lambda s: pd.Series(s(t), index=self.sample_times)
+            )
+            return xr.DataArray(
+                interpolated.T,
+                dims=['sample_times', 'neuron', ]
+            )
 
         # do the extraction
-        tensor = [extractor(ev) for _,ev in X.iterrows()]
+        tensor = [extractor(ev) for _, ev in X.iterrows()]
         concat_dim = events_to_xr_dim(X)
 
         # concatenate the DataArrays into a single DataArray
-        return xr.concat(tensor,dim=concat_dim)
+        return xr.concat(tensor, dim=concat_dim)
 
 
 class PeriEventSpikeSampler(BaseEstimator,TransformerMixin):
