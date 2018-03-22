@@ -28,10 +28,10 @@ Trace transformers
     trace.Binarizer
     trace.EdgeDetector
     trace.WhenTrueFinder
-    calcium.OASISInferer
-    calcium.MedianFilterDetrend
-    calcium.SavGolFilterDetrend
-    calcium.EventRescale
+    calcium.CalciumInferer
+    calcium.MedianFilterDetrender
+    calcium.SavGolFilterDetrender
+    calcium.EventRescaler
 
 
 .. _event_api:
@@ -54,3 +54,11 @@ Tensor transformers
    :toctree: generated/
 
     tensor.ResponseReducer
+
+Datasets
+-------------------
+
+.. autosummary::
+   :toctree: generated/
+
+    datasets.fetch_rat_hippocampus_foraging

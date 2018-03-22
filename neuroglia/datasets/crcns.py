@@ -60,7 +60,7 @@ def _fetch_crcns_datafile(crcns,local_filename=None,username=None,password=None,
 
     if local_filename is None:
         local_filename = crcns.filename
-        
+
     if os.path.exists(local_filename):
         checksum = _sha256(local_filename)
         if crcns.checksum == checksum:
@@ -119,7 +119,7 @@ def read_spikes_from_tar(f):
         'crcns/hc2/ec014.333/ec014.333.clu.7',
         'crcns/hc2/ec014.333/ec014.333.clu.8',
     )
-    
+
     spikes = []
 
     for timestamps,clusters in zip(timestamp_files,cluster_files):
@@ -133,11 +133,11 @@ def read_spikes_from_tar(f):
             if int(cluster)>1:
                 spike = dict(
                     time=float(frame) / SPIKES_HZ,
-                    cluster='{}-{:02d}'.format(shank,int(cluster)),
+                    neuron='{}-{:02d}'.format(shank,int(cluster)),
 #                     shank=shank,
                 )
                 spikes.append(spike)
-                
+
     spikes = pd.DataFrame(spikes)
     return spikes
 
@@ -175,6 +175,50 @@ def load_hc2(tar_path):
 
 
 def fetch_rat_hippocampus_foraging(data_home=None,username=None,password=None,download_if_missing=True):
+    """Loader for experiment ec014.333 from the HC-2 dataset on crcns.org
+
+    More info on this dataset: https://crcns.org/data-sets/hc/hc-2/about-hc-2
+
+    To download this data, you must have a CRCNS account. Request an account
+    at https://crcns.org/request-account/
+
+    Parameters
+    ----------
+    data_home : optional, default: None
+        Specify another download and cache folder for the datasets. By default
+        all scikit-learn data is stored in '~/scikit_learn_data' subfolders.
+    username : optional, default: None
+        CRCNS username. All CRCNS datasets need a username to login. If `None`
+        (default), the `CRCNS_USERNAME` environment variable is used.
+    password : optional, default: None
+        CRCNS username & password. All CRCNS datasets need a username to login. If `None`
+        (default), the `CRCNS_USERNAME` environment variable is used.
+    download_if_missing : optional, default=True
+        If False, raise a IOError if the data is not locally available
+        instead of trying to download the data from the source site.
+
+    Returns
+    -------
+    dataset : dict-like object with the following attributes:
+    dataset.spikes : dataframe, shape [20640, 2]
+        Each row is a single spike at `time` elicited from neuron `neuron`
+    dataset.location : dataframe, shape (20640,)
+        Each row is a sample of the rat's position, with the location of the
+        head designated by (x,y) and the location of the back designated by
+        (x2, y2)
+
+    Notes
+    ------
+    This dataset consists of 42 simultaneously recorded neurons from the rat
+    hippocampus along with coordinates of it's position while it forages in
+    an open field.
+
+    References
+    ----------
+    Mizuseki K, Sirota A, Pastalkova E, Buzsáki G. (2009): Multi-unit recordings
+    from the rat hippocampus made during open field foraging.
+    http://dx.doi.org/10.6080/K0Z60KZ9
+    """
 
 
     data_home = get_neuroglia_data_home(data_home=data_home)
@@ -207,7 +251,7 @@ def fetch_rat_hippocampus_foraging(data_home=None,username=None,password=None,do
         )
 
         spikes, location = load_hc2(tar_path)
-        
+
         spikes.to_pickle(spikes_path)
         location.to_pickle(location_path)
 
