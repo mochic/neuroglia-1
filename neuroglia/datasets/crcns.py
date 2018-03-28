@@ -158,12 +158,15 @@ def read_location_from_tar(f):
     return loc
 
 
+
+
 def load_hc2(tar_path):
 
     with tarfile.open(mode="r:gz", name=tar_path) as f:
         spikes = read_spikes_from_tar(f)
         location = read_location_from_tar(f)
 
+    # truncate neuronal data to time when mouse is exploring
     min_time = location['time'].min()
     max_time = location['time'].max()
 
@@ -171,6 +174,16 @@ def load_hc2(tar_path):
         (spikes['time'] >= min_time)
         & (spikes['time'] <= max_time)
     ]
+
+    # set approx center of arena to zero in x & y
+    x0 = np.mean([location['x2'].max(),location['x2'].min()])
+    y0 = np.mean([location['y2'].max(),location['y2'].min()])
+
+    location['x'] -= x0
+    location['x2'] -= x0
+    location['y'] -= y0
+    location['y2'] -= y0
+
     return spikes, location
 
 
@@ -181,6 +194,8 @@ def fetch_rat_hippocampus_foraging(data_home=None,username=None,password=None,do
 
     To download this data, you must have a CRCNS account. Request an account
     at https://crcns.org/request-account/
+
+    Warning! The first time you run this function, it will download a 3.3GB file.
 
     Parameters
     ----------
@@ -209,15 +224,17 @@ def fetch_rat_hippocampus_foraging(data_home=None,username=None,password=None,do
 
     Notes
     ------
-    This dataset consists of 42 simultaneously recorded neurons from the rat
-    hippocampus along with coordinates of it's position while it forages in
-    an open field.
+    This dataset consists of 58 simultaneously recorded neurons from the rat
+    hippocampus along with coordinates of its position while it forages in an
+    open arena (180cm x 180cm) for 92 minutes.
 
     References
     ----------
-    Mizuseki K, Sirota A, Pastalkova E, Buzsáki G. (2009): Multi-unit recordings
-    from the rat hippocampus made during open field foraging.
+
+    Mizuseki K, Sirota A, Pastalkova E, Buzsaki G. (2009): Multi-unit recordings
+    from the rat hippocampus made during open field foraging
     http://dx.doi.org/10.6080/K0Z60KZ9
+
     """
 
 
