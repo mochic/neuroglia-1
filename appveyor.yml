@@ -29,9 +29,11 @@ install:
 - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
 - pip install -r requirements.txt
 - pip install -r requirements-dev.txt
+- pip install codecov
 
 build_script:
  - python setup.py build_ext --inplace
 
 test_script:
- - pytest
+ - pytest --cov=./
+ - codecov
