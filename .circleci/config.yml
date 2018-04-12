@@ -55,6 +55,15 @@ ci-steps: &ci-steps
         command: |
           . ../venv/bin/activate
           tox -e $TEST_TOX_ENV recreate --installpkg dist/*.whl
+    - deploy:
+      name: Deploy Master
+      branch: master
+      tag: /v[0-9]+(\.[0-9]+)*/
+      commands:
+       - python setup.py build_ext --inplace
+       - python setup.py sdist upload -r local
+       - python setup.py bdist_wheel upload -r local
+
     # - run:
     #     <<: *publish-prerelease-on-github
 

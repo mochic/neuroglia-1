@@ -37,3 +37,18 @@ build_script:
 test_script:
  - pytest --cov=neuroglia
  - codecov
+
+after_test:
+ - "python setup.py sdist bdist bdist_wheel"
+
+artifacts:
+ - path: dist\*
+
+deploy:
+  - provider: Environment
+    name: production
+    draft: false
+    prerelease: true
+    on:
+      branch: master
+      appveyor_repo_tag: true
