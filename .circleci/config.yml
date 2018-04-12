@@ -55,7 +55,7 @@ ci-steps: &ci-steps
         command: |
           . ../venv/bin/activate
           tox -e $TEST_TOX_ENV recreate --installpkg dist/*.whl
-    - deploy:
+    - run:
       name: Deploy Master
       branch: master
       tag: /v[0-9]+(\.[0-9]+)*/
