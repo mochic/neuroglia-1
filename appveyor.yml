@@ -44,8 +44,5 @@ after_test:
 artifacts:
  - path: dist\*
 
-deploy:
-  - provider: Environment
-    name: production
-    draft: false
-    prerelease: true
+deploy_script:
+  - python setup.py sdist bdist_wheel upload
