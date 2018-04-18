@@ -74,7 +74,9 @@ script:
 deploy:
  - provider: releases
    api_key:
-    secure: $GITHUB_RELEASES_API_KEY
+    secure: "$GITHUB_RELEASES_API_KEY"
    file_glob: true
    file: "dist/*"
    skip_cleanup: true
+   on:
+    repo: mochic/neuroglia-1
