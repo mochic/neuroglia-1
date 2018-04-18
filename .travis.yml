@@ -6,27 +6,27 @@ matrix:
   - os: linux
     sudo: required
     python: 2.7
-    env: CONDA_DEPENDENCIES=mingw
+    compiler: gcc
   - os: linux
     sudo: required
     python: 3.5
-    env: CONDA_DEPENDENCIES=m2w64-toolchain
+    compiler: gcc
   - os: linux
     sudo: required
     python: 3.6
-    env: CONDA_DEPENDENCIES=m2w64-toolchain
+    compiler: gcc
   - os: osx
     language: generic
     python: 2.7
-    env: CONDA_DEPENDENCIES=mingw
+    compiler: gcc
   - os: osx
     language: generic
     python: 3.5
-    env: CONDA_DEPENDENCIES=m2w64-toolchain
+    compiler: gcc
   - os: osx
     language: generic
     python: 3.6
-    env: CONDA_DEPENDENCIES=m2w64-toolchain
+    compiler: gcc
 
 install:
  - sudo apt-get update
@@ -50,8 +50,8 @@ install:
  - conda update -q conda
  - conda info -a
 
- - conda create -q -n build-environment python=$TRAVIS_PYTHON_VERSION $CONDA_DEPENDENCIES
- - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION $CONDA_DEPENDENCIES
+ - conda create -q -n build-environment python=$TRAVIS_PYTHON_VERSION
+ - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
  - source activate build-environment
  - pip install -r requirements.txt
  - pip install -r requirements-dev.txt
@@ -69,3 +69,12 @@ script:
  - source activate test-environment
  - pytest --cov=neuroglia
  - codecov
+
+# from: https://github.com/google/brotli-wheels/blob/master/.travis.yml
+deploy:
+ - provider: releases
+   api_key:
+    secure: $GITHUB_RELEASES_API_KEY
+   file_glob: true
+   file: "dist/*"
+   skip_cleanup: true
