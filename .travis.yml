@@ -1,32 +1,38 @@
-# from: https://conda.io/docs/user-guide/tasks/use-conda-with-travis-ci.html
+# from: https://conda.io/docs/user-guide/tasks/use-conda-with-travis-ci.html and https://github.com/google/brotli-wheels/blob/master/.travis.yml
 language: generic
+python: 3.6
 
 matrix:
+ exclude:
+  - python: 3.6
  include:
   - os: linux
     sudo: required
-    python: 2.7
     compiler: gcc
+    env:
+     - CONDA_PYTHON_VERSION=2.7
   - os: linux
     sudo: required
-    python: 3.5
     compiler: gcc
+    env:
+     - CONDA_PYTHON_VERSION=3.5
   - os: linux
     sudo: required
-    python: 3.6
     compiler: gcc
+    env:
+     - CONDA_PYTHON_VERSION=3.6
   - os: osx
-    language: generic
-    python: 2.7
     compiler: gcc
+    env:
+     - CONDA_PYTHON_VERSION=2.7
   - os: osx
-    language: generic
-    python: 3.5
     compiler: gcc
+    env:
+     - CONDA_PYTHON_VERSION=3.5
   - os: osx
-    language: generic
-    python: 3.6
     compiler: gcc
+    env:
+     - CONDA_PYTHON_VERSION=3.6
 
 install:
  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
@@ -54,8 +60,8 @@ install:
  - conda update -q conda
  - conda info -a
 
- - conda create -q -n build-environment python=$TRAVIS_PYTHON_VERSION
- - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
+ - conda create -q -n build-environment python=$CONDA_PYTHON_VERSION
+ - conda create -q -n test-environment python=$CONDA_PYTHON_VERSION
  - source activate build-environment
  - pip install -r requirements.txt
  - pip install -r requirements-dev.txt
@@ -74,7 +80,6 @@ script:
  - pytest --cov=neuroglia
  - codecov
 
-# from: https://github.com/google/brotli-wheels/blob/master/.travis.yml
 deploy:
  - provider: releases
    tag: $TRAVIS_TAG
