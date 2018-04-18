@@ -29,7 +29,11 @@ matrix:
     compiler: gcc
 
 install:
- - sudo apt-get update
+ - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+    brew update;
+   else
+    sudo apt-get update;
+   fi
  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
     if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
      wget https://repo.continuum.io/miniconda/Miniconda2-latest-MacOSX-x86_64.sh -O miniconda.sh;
@@ -79,4 +83,5 @@ deploy:
    file: "dist/*"
    skip_cleanup: true
    on:
+    all_branches: true
     repo: mochic/neuroglia-1
