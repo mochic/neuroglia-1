@@ -77,7 +77,7 @@ script:
 # from: https://github.com/google/brotli-wheels/blob/master/.travis.yml
 deploy:
  - provider: releases
-   api_key: "$GITHUB_RELEASES_API_KEY"
+   api_key: $GITHUB_TOKEN
    file_glob: true
    file: "dist/*"
    skip_cleanup: true
