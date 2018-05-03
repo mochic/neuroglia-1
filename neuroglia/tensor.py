@@ -1,8 +1,7 @@
-import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
-import numpy as np
 
-class ResponseReducer(BaseEstimator,TransformerMixin):
+
+class ResponseReducer(BaseEstimator, TransformerMixin):
     """Reduces a response tensor by performing a function along one dimension
 
     Parameters
@@ -50,4 +49,4 @@ class ResponseReducer(BaseEstimator,TransformerMixin):
         -------
         Xt : xarray.DataArray with remaining dimensions
         """
-        return X.reduce(self.func,dim=self.dim)
+        return X.reduce(self.func, dim=self.dim)

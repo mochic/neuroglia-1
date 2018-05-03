@@ -1,16 +1,16 @@
 import numpy as np
 import pandas as pd
-import xarray as xr
 from scipy import stats
 from sklearn.base import TransformerMixin, BaseEstimator
 
 
 def get_neuron(neuron_spikes):
     unique_neurons = neuron_spikes['neuron'].unique()
-    assert len(unique_neurons)==1
+    assert len(unique_neurons) == 1
     return unique_neurons[0]
 
-class Binner(BaseEstimator,TransformerMixin):
+
+class Binner(BaseEstimator, TransformerMixin):
     """Bin a population of spike events into an array of spike counts.
 
     This transformer converts a table of spike times into a series of spike
@@ -50,7 +50,7 @@ class Binner(BaseEstimator,TransformerMixin):
     fit method does nothing but is useful when used in a pipeline.
 
     """
-    def __init__(self,sample_times):
+    def __init__(self, sample_times):
         self.sample_times = sample_times
 
     def fit(self, X, y=None):
@@ -72,14 +72,14 @@ class Binner(BaseEstimator,TransformerMixin):
         """
         return self
 
-    def __make_trace(self,neuron_spikes):
+    def __make_trace(self, neuron_spikes):
         neuron = get_neuron(neuron_spikes)
 
         trace, _ = np.histogram(
             neuron_spikes['time'],
             self.sample_times
-            )
-        return pd.Series(data=trace,index=self.sample_times[:-1],name=neuron)
+        )
+        return pd.Series(data=trace, index=self.sample_times[:-1], name=neuron)
 
     def transform(self, X):
         """ Bin each neuron's spikes into a trace of spike counts.
@@ -98,6 +98,7 @@ class Binner(BaseEstimator,TransformerMixin):
         traces = X.groupby('neuron').apply(self.__make_trace).T
         return traces
 
+
 KERNELS = {
     'gaussian': stats.norm,
     'exponential': stats.expon,
@@ -106,7 +107,8 @@ KERNELS = {
 
 DEFAULT_TAU = 0.005
 
-class Smoother(BaseEstimator,TransformerMixin):
+
+class Smoother(BaseEstimator, TransformerMixin):
     """Smooth a population of spike events into an array.
 
     This transformer converts a table of spike times into a trace of smoothed
@@ -143,12 +145,10 @@ class Smoother(BaseEstimator,TransformerMixin):
 
     This estimator is stateless (besides constructor parameters), the
     fit method does nothing but is useful when used in a pipeline.
-    
+
     """
-    def __init__(self,sample_times,kernel='gaussian',tau=DEFAULT_TAU):
-
+    def __init__(self, sample_times, kernel='gaussian', tau=DEFAULT_TAU):
         self.sample_times = sample_times
-
         self.kernel = kernel
         self.tau = tau
 
@@ -171,22 +171,22 @@ class Smoother(BaseEstimator,TransformerMixin):
         """
         return self
 
-    def _make_trace(self,neuron_spikes):
+    def _make_trace(self, neuron_spikes):
         neuron = get_neuron(neuron_spikes)
 
-        kernel_func = lambda spike: KERNELS[self.kernel](loc=spike,scale=self.tau)
+        kernel_func = lambda spike: KERNELS[self.kernel](loc=spike, scale=self.tau)  # noqa: E731
 
         data = (
             neuron_spikes['time']
-            .map(lambda t: kernel_func(t).pdf(self.sample_times)) # creates kernel function for each spike and applies to the time bins
-            .sum() # and adds them together
+            .map(lambda t: kernel_func(t).pdf(self.sample_times))  # creates kernel function for each spike and applies to the time bins
+            .sum()  # and adds them together
         )
 
         return pd.Series(
             data=data,
             index=self.sample_times,
-            name=neuron,
-            )
+            name=neuron
+        )
 
     def transform(self, X):
         """ Smooth each neuron's spikes into a trace of smoothed spikes.
@@ -203,6 +203,6 @@ class Smoother(BaseEstimator,TransformerMixin):
             sample time.
         """
         traces = X.groupby('neuron').apply(self._make_trace).T
-        if len(traces)==0:
+        if len(traces) == 0:
             traces = pd.DataFrame(index=self.sample_times)
         return traces

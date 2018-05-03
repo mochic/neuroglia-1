@@ -4,7 +4,7 @@ __version__ = '0.2.9'
 __author__ = 'Justin Kiggins <justink@alleninstitute.org>'
 __all__ = []
 
-from .spike import *
-from .trace import *
-from .tensor import *
-from .nwb import *
+from .spike import *  # noqa: F403, F401
+from .trace import *  # noqa: F403, F401
+from .tensor import *  # noqa: F403, F401
+from .nwb import *  # noqa: F403, F401

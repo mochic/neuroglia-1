@@ -1,7 +1,8 @@
 import pandas as pd
-from sklearn.base import BaseEstimator,TransformerMixin
+from sklearn.base import BaseEstimator, TransformerMixin
 
-class SpikeTablizer(BaseEstimator,TransformerMixin):
+
+class SpikeTablizer(BaseEstimator, TransformerMixin):
     """Convert a dictionary of spike times to a dataframe of spike times.
 
     It is common to store spike times as a dictionary where the keys are neuron
@@ -66,11 +67,11 @@ class SpikeTablizer(BaseEstimator,TransformerMixin):
         -------
         Xt : pandas DataFrame with columns ['time','neuron']
         """
-        population = {'neuron':[],'time':[]}
-        for n,times in X.items():
+        population = {"neuron": [], "time": [], }
+        for n, times in X.items():
             for t in times:
-                population['neuron'].append(n)
-                population['time'].append(t)
-        df = pd.DataFrame(population).sort_values('time')
+                population["neuron"].append(n)
+                population["time"].append(t)
+        df = pd.DataFrame(population).sort_values("time")
         df.reset_index(drop=True, inplace=True)
         return df

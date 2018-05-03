@@ -1,12 +1,10 @@
-import numpy as np
-import pandas as pd
 import xarray as xr
-
-from sklearn.base import BaseEstimator,TransformerMixin
+from sklearn.base import BaseEstimator, TransformerMixin
 
 from .utils import events_to_xr_dim
 
-class EpochTraceReducer(BaseEstimator,TransformerMixin):
+
+class EpochTraceReducer(BaseEstimator, TransformerMixin):
     """Take event-aligned samples of traces from a population of neurons.
 
     Traces are sampled relative to the event time. There is no enforced
@@ -63,21 +61,20 @@ class EpochTraceReducer(BaseEstimator,TransformerMixin):
 
         # define a local function that will extract traces around each event
         def extractor(ev):
-            window = ev['time'], ev['time'] + ev['duration']
             mask = (
-                (self.traces.index >= ev['time'])
-                & (self.traces.index < (ev['time'] + ev['duration']))
-                )
+                (self.traces.index >= ev['time']) &
+                (self.traces.index < (ev['time'] + ev['duration']))
+            )
             return (
                 self.traces[mask]
-                .apply(self.func,axis=0)
+                .apply(self.func, axis=0)
                 .to_xarray()
-                .rename({'index':'neuron'})
+                .rename({"index": "neuron", })
             )
 
         # do the extraction
-        tensor = [extractor(ev) for _,ev in X.iterrows()]
+        tensor = [extractor(ev) for _, ev in X.iterrows()]
         concat_dim = events_to_xr_dim(X)
 
         # concatenate the DataArrays into a single DataArray
-        return xr.concat(tensor,dim=concat_dim)
+        return xr.concat(tensor, dim=concat_dim)

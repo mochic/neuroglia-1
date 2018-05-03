@@ -1,13 +1,13 @@
 import numpy as np
 import pandas as pd
 import xarray as xr
-
-from sklearn.base import BaseEstimator,TransformerMixin
+from sklearn.base import BaseEstimator, TransformerMixin
 
 from .utils import create_interpolator, events_to_xr_dim
 from .spike import Binner, DEFAULT_TAU
 
-class PeriEventTraceSampler(BaseEstimator,TransformerMixin):
+
+class PeriEventTraceSampler(BaseEstimator, TransformerMixin):
     """Take event-aligned samples of traces from a population of neurons.
 
     Traces are sampled relative to the event time. There is no enforced
@@ -34,7 +34,7 @@ class PeriEventTraceSampler(BaseEstimator,TransformerMixin):
 
     def _make_splined_traces(self):
         self.splined_traces_ = self.traces.apply(
-            lambda y: create_interpolator(self.traces.index,y),
+            lambda y: create_interpolator(self.traces.index, y),
             axis=0,
         )
 
@@ -72,19 +72,22 @@ class PeriEventTraceSampler(BaseEstimator,TransformerMixin):
         def extractor(ev):
             t = self.sample_times + ev['time']
             interpolated = self.splined_traces_.apply(
-                lambda s: pd.Series(s(t),index=self.sample_times)
-                )
-            return xr.DataArray(interpolated.T,dims=['sample_times','neuron'])
+                lambda s: pd.Series(s(t), index=self.sample_times)
+            )
+            return xr.DataArray(
+                interpolated.T,
+                dims=['sample_times', 'neuron', ]
+            )
 
         # do the extraction
-        tensor = [extractor(ev) for _,ev in X.iterrows()]
+        tensor = [extractor(ev) for _, ev in X.iterrows()]
         concat_dim = events_to_xr_dim(X)
 
         # concatenate the DataArrays into a single DataArray
-        return xr.concat(tensor,dim=concat_dim)
+        return xr.concat(tensor, dim=concat_dim)
 
 
-class PeriEventTraceReducer(BaseEstimator,TransformerMixin):
+class PeriEventTraceReducer(BaseEstimator, TransformerMixin):
     """Take event-aligned samples of traces from a population of neurons.
 
     Traces are sampled relative to the event time. There is no enforced
@@ -105,7 +108,7 @@ class PeriEventTraceReducer(BaseEstimator,TransformerMixin):
     This estimator is stateless (besides constructor parameters), the
     fit method does nothing but is useful when used in a pipeline.
     """
-    def __init__(self, traces, sample_times,func=np.mean):
+    def __init__(self, traces, sample_times, func=np.mean):
         self.traces = traces
         self.sample_times = sample_times
         self.func = func
@@ -125,7 +128,6 @@ class PeriEventTraceReducer(BaseEstimator,TransformerMixin):
         self
 
         """
-
         return self
 
     def transform(self, X):
@@ -143,7 +145,7 @@ class PeriEventTraceReducer(BaseEstimator,TransformerMixin):
         sample_dim = xr.DataArray(
             self.sample_times[:-1],
             name='sample_times',
-            dims=['sample_times'],
+            dims=['sample_times', ],
         )
 
         # define a local function that will extract traces around each event
@@ -151,30 +153,30 @@ class PeriEventTraceReducer(BaseEstimator,TransformerMixin):
             bins = self.sample_times + ev['time']
 
             local_extract = []
-            for window in zip(bins[:-1],bins[1:]):
+            for window in zip(bins[:-1], bins[1:]):
                 mask = (
-                    (self.traces.index >= window[0])
-                    & (self.traces.index < window[1])
-                    )
+                    (self.traces.index >= window[0]) &
+                    (self.traces.index < window[1])
+                )
                 local_extract.append(
                     (
                         self.traces[mask]
-                        .apply(self.func,axis=0)
+                        .apply(self.func, axis=0)
                         .to_xarray()
-                        .rename({'index':'neuron'})
+                        .rename({"index": "neuron", })
                     )
                 )
-            return xr.concat(local_extract,dim=sample_dim)
+            return xr.concat(local_extract, dim=sample_dim)
 
         # do the extraction
-        tensor = [extractor(ev) for _,ev in X.iterrows()]
+        tensor = [extractor(ev) for _, ev in X.iterrows()]
         concat_dim = events_to_xr_dim(X)
 
         # concatenate the DataArrays into a single DataArray
-        return xr.concat(tensor,dim=concat_dim)
+        return xr.concat(tensor, dim=concat_dim)
 
 
-class PeriEventSpikeSampler(BaseEstimator,TransformerMixin):
+class PeriEventSpikeSampler(BaseEstimator, TransformerMixin):
     """Take event-aligned samples of spikes from a population of neurons.
 
     Parameters
@@ -197,7 +199,10 @@ class PeriEventSpikeSampler(BaseEstimator,TransformerMixin):
     This estimator is stateless (besides constructor parameters), the
     fit method does nothing but is useful when used in a pipeline.
     """
-    def __init__(self, spikes, sample_times, fillna=True, sampler=None,sampler_kwargs=None):
+    def __init__(
+            self, spikes, sample_times, fillna=True, sampler=None,
+            sampler_kwargs=None
+    ):
         self.spikes = spikes
         self.sample_times = sample_times
         self.fillna = fillna
@@ -243,29 +248,28 @@ class PeriEventSpikeSampler(BaseEstimator,TransformerMixin):
 
         # define a local function that will extract traces around each event
         def extractor(ev):
-
             t = self.sample_times + ev['time']
-            start = t[0] - 10*DEFAULT_TAU
-            stop = t[-1] + 10*DEFAULT_TAU
+            start = t[0] - 10 * DEFAULT_TAU
+            stop = t[-1] + 10 * DEFAULT_TAU
 
             local_mask = (
-                (self.spikes['time']>start) & (self.spikes['time']<stop) # TODO: replace with np.search_sorted to speed up this query
+                (self.spikes['time'] > start) & (self.spikes['time'] < stop)  # TODO: replace with np.search_sorted to speed up this query
             )
             local_spikes = self.spikes[local_mask]
 
-            sampler = self.Sampler(t,**self.sampler_kwargs)
+            sampler = self.Sampler(t, **self.sampler_kwargs)
             traces = sampler.fit_transform(local_spikes)
 
             traces.index = self.sample_times[:len(traces)]
 
-            return xr.DataArray(traces,dims=['sample_times','neuron'])
+            return xr.DataArray(traces, dims=["sample_times", "neuron", ])
 
         # do the extraction
-        tensor = [extractor(ev) for _,ev in X.iterrows()]
+        tensor = [extractor(ev) for _, ev in X.iterrows()]
         concat_dim = events_to_xr_dim(X)
 
         # concatenate the DataArrays into a single DataArray
-        tensor = xr.concat(tensor,dim=concat_dim)
+        tensor = xr.concat(tensor, dim=concat_dim)
 
         if self.fillna:
             tensor = tensor.fillna(0)

@@ -3,6 +3,7 @@ import pandas as pd
 from sklearn.base import TransformerMixin, BaseEstimator
 from sklearn.preprocessing import binarize
 
+
 class Binarizer(BaseEstimator, TransformerMixin):
     """Binarize data (set feature values to 0 or 1) according to a threshold
 
@@ -68,14 +69,12 @@ class Binarizer(BaseEstimator, TransformerMixin):
         X_ = binarize(X, threshold=self.threshold, copy=self.copy)
 
         if df:
-            return pd.DataFrame(data=X_,index=index,columns=columns)
+            return pd.DataFrame(data=X_, index=index, columns=columns)
         else:
             return X_
 
 
-
-def edge_detector(X,falling=False):
-
+def edge_detector(X, falling=False):
     df = True
     try:
         index = X.index
@@ -88,8 +87,8 @@ def edge_detector(X,falling=False):
         axis=0,
         arr=X.copy(),
     )
-    empty_row = np.zeros(shape=(1,X.shape[1]),dtype=X.dtype)
-    X = np.vstack((empty_row,X))
+    empty_row = np.zeros(shape=(1, X.shape[1]), dtype=X.dtype)
+    X = np.vstack((empty_row, X))
 
     if falling:
         X = X < 0
@@ -99,11 +98,12 @@ def edge_detector(X,falling=False):
     X = X.astype(int)
 
     if df:
-        return pd.DataFrame(data=X,index=index,columns=columns)
+        return pd.DataFrame(data=X, index=index, columns=columns)
     else:
         return X
 
-class EdgeDetector(BaseEstimator,TransformerMixin):
+
+class EdgeDetector(BaseEstimator, TransformerMixin):
     """Detect rising or falling edges in a trace
 
     This transformer detects edges in a trace, where the value of an observation
@@ -124,7 +124,7 @@ class EdgeDetector(BaseEstimator,TransformerMixin):
     def __init__(self, falling=False):
         self.falling = falling
 
-    def fit(self,X,y=None):
+    def fit(self, X, y=None):
         """Do nothing and return the estimator unchanged
 
         This method is here to implement the scikit-learn API and work in
@@ -141,16 +141,17 @@ class EdgeDetector(BaseEstimator,TransformerMixin):
         """
         return self
 
-    def transform(self,X):
+    def transform(self, X):
         """Detect Edges in each trace
 
         Parameters
         ----------
         X : DataFrame in `traces` strcutre [n_samples, n_traces]
         """
-        return edge_detector(X,self.falling)
+        return edge_detector(X, self.falling)
 
-class WhenTrueFinder(BaseEstimator,TransformerMixin):
+
+class WhenTrueFinder(BaseEstimator, TransformerMixin):
     """Finds times when a trace is non-negative
 
     This transformer returns a list of events, shaped like a spike table.
@@ -167,7 +168,7 @@ class WhenTrueFinder(BaseEstimator,TransformerMixin):
     def __init__(self):
         pass
 
-    def fit(self,X,y=None):
+    def fit(self, X, y=None):
         """Do nothing and return the estimator unchanged
 
         This method is here to implement the scikit-learn API and work in
@@ -184,7 +185,7 @@ class WhenTrueFinder(BaseEstimator,TransformerMixin):
         """
         return self
 
-    def transform(self,X):
+    def transform(self, X):
         """Find times when trace is greater than zero
 
         Parameters
@@ -195,8 +196,7 @@ class WhenTrueFinder(BaseEstimator,TransformerMixin):
         -------
         Xt : DataFrame with columns ['time','neuron']
         """
-        return (X[X > 0]
-            .stack()
-            .reset_index()[['level_0','level_1']]
-            .rename(columns={'level_0':'time','level_1':'neuron'})
-        )
+        return X[X > 0] \
+            .stack() \
+            .reset_index()[['level_0', 'level_1', ]] \
+            .rename(columns={'level_0': 'time', 'level_1': 'neuron', })
